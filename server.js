@@ -2,6 +2,8 @@ const express = require("express");
 const app = express();
 const PORT = 3000;
 
+app.use(express.json());
+
 // Simple logging middleware
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.originalUrl}`);
@@ -21,7 +23,7 @@ app.get("/notes/:id", (req, res, next) => {
   if (note) {
     res.json(note);
   } else {
-    res.status(404).send(`Note with id ${id} does not exist.`);
+    next({ status: 404, message: `Note with id ${id} does not exist.` });
   }
 });
 
@@ -31,8 +33,18 @@ app.post("/notes", (req, res, next) => {
     notes.push({ id: notes.length + 1, text });
     res.status(201).json(notes.at(-1));
   } else {
-    res.status(400).send(`New note must have text.`);
+    next({ status: 400, message: `New note must have text.` });
   }
+});
+
+app.use((req, res, next) => {
+  next({ status: 404, message: "Endpoint not found." });
+});
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.status ?? 500);
+  res.json(err.message ?? "Sorry, something went wrong!");
 });
 
 app.listen(PORT, () => {
